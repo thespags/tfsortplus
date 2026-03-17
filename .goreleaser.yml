@@ -6,13 +6,12 @@ builds:
     goos:
       - linux
       - darwin
-      - windows
     goarch:
       - amd64
       - arm
       - arm64
     ldflags:
-      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+      - -s -w -X github.com/thespags/tfsortplus/cmd.version={{.Version}} -X github.com/thespags/tfsortplus/cmd.commit={{.Commit}} -X github.com/thespags/tfsortplus/cmd.date={{.Date}}
     env:
       - CGO_ENABLED=0
 
