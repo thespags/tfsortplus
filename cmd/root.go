@@ -58,8 +58,9 @@ The tool loads config from the current directory and processes .tf files.`,
 
   # Check with diff output
   tfsortplus --check --diff`,
-		Version: versionString(),
-		RunE:    run(processor, dir),
+		Version:      versionString(),
+		SilenceUsage: true,
+		RunE:         run(processor, dir),
 	}
 
 	cmd.Flags().BoolVarP(&processor.Recursive, "recursive", "r", false, "Process directories recursively")
