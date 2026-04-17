@@ -1,0 +1,4 @@
+order:
+  - data\.gitlab_.*
+  - resource\.gitlab_.*
+alphabeticalTies: true

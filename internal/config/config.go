@@ -11,8 +11,6 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-// DefaultConfigNames are the config file names to search for.
-
 // Config represents the sorting configuration.
 type Config struct {
 	// Order defines the sorting priority. Supports regex patterns like "resource\.gitlab_.*".
@@ -24,11 +22,22 @@ type Config struct {
 	// UnknownFirst places unmatched blocks before known blocks when true, after when false (default).
 	UnknownFirst bool `yaml:"unknownFirst"`
 
+	// Last defines sorting priority after order and unknowns.
+	// e.g., output will appear after unknown resources by default.
+	Last []string `yaml:"last"`
+
+	// LocalsFirst places locals blocks before all other blocks. Default true.
+	LocalsFirst bool `yaml:"localsFirst"`
+
+	// OutputLast places output blocks after all other blocks (including unknowns). Default true.
+	OutputLast bool `yaml:"outputLast"`
+
 	// Ignore lists file/directory patterns to skip (regex patterns).
 	Ignore []string `yaml:"ignore"`
 
 	// compiled patterns for matching
 	patterns       []*regexp.Regexp
+	lastPatterns   []*regexp.Regexp
 	ignorePatterns []*regexp.Regexp
 }
 
@@ -36,6 +45,8 @@ type Config struct {
 func Default() *Config {
 	return &Config{
 		AlphabeticalTies: true,
+		LocalsFirst:      true,
+		OutputLast:       true,
 	}
 }
 
@@ -44,7 +55,9 @@ func GetConfig(dir string) (*Config, error) {
 	path := findPath(dir)
 
 	if path == "" {
-		return Default(), nil
+		cfg := Default()
+
+		return cfg, cfg.Compile()
 	}
 
 	return load(path)
@@ -52,9 +65,22 @@ func GetConfig(dir string) (*Config, error) {
 
 // Compile compiles the configs Order and Ignore fields into compiled regex patterns.
 func (c *Config) Compile() error {
+	order := c.Order
+	if c.LocalsFirst {
+		order = append([]string{"locals"}, order...)
+	}
+
+	last := c.Last
+	if c.OutputLast {
+		last = append(last, `output\..*`)
+	}
+
 	var err, errs error
 
-	c.patterns, err = compile(c.Order)
+	c.patterns, err = compile(order)
+	errs = errors.Join(errs, err)
+
+	c.lastPatterns, err = compile(last)
 	errs = errors.Join(errs, err)
 
 	c.ignorePatterns, err = compile(c.Ignore)
@@ -84,7 +110,11 @@ func load(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	var cfg Config
+	cfg := Config{
+		AlphabeticalTies: true,
+		LocalsFirst:      true,
+		OutputLast:       true,
+	}
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config file: %w", err)
 	}
@@ -138,13 +168,23 @@ func (c *Config) ShouldIgnore(path string) bool {
 }
 
 // GetOrder returns the order for a block type and resource type.
-// Returns -1 for unknown blocks if UnknownFirst is true, or len(patterns) if false.
+// Order priority: patterns (0...n-1), unknowns (n or -1), lastPatterns (n+1...).
 func (c *Config) GetOrder(blockType, resourceType string) int {
-	key := blockType + "." + resourceType
+	key := blockType
+	if resourceType != "" {
+		key += "." + resourceType
+	}
 
 	for i, pattern := range c.patterns {
 		if pattern.MatchString(key) {
 			return i
+		}
+	}
+
+	// Check last patterns (should sort after unknowns)
+	for i, pattern := range c.lastPatterns {
+		if pattern.MatchString(key) {
+			return len(c.patterns) + 1 + i
 		}
 	}
 

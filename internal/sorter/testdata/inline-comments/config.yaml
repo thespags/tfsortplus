@@ -1,0 +1,4 @@
+order:
+  - data\..*
+  - resource\..*
+alphabeticalTies: true

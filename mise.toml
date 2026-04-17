@@ -2,5 +2,9 @@
 go = "1.26.1"
 golangci-lint = "2.11.3"
 
+[tasks.install]
+description = "Build and install tfsortplus locally"
+run = "go build -o \"$GOBIN/tfsortplus\""
+
 [settings]
 lockfile = true

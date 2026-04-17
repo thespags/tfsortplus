@@ -1,0 +1,4 @@
+order:
+  - resource\.gitlab_.*
+alphabeticalTies: true
+unknownFirst: true

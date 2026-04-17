@@ -1,0 +1,3 @@
+order:
+  - resource\.gitlab_project
+alphabeticalTies: false

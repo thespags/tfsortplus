@@ -1,0 +1,4 @@
+order:
+  - resource\.gitlab_project
+  - resource\.gitlab_branch_protection
+alphabeticalTies: true

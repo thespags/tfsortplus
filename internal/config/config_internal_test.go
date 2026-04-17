@@ -21,6 +21,8 @@ func TestGetOrder(t *testing.T) {
 			`module\..*`,
 		},
 		UnknownFirst: false,
+		LocalsFirst:  true,
+		OutputLast:   true,
 	}
 	require.NoError(t, cfg.Compile())
 
@@ -29,17 +31,54 @@ func TestGetOrder(t *testing.T) {
 		resourceType string
 		expected     int
 	}{
-		{"module", "group", 0},
-		{"data", "gitlab_group", 1},
-		{"data", "gitlab_project", 1},
-		{"resource", "gitlab_project", 2},
-		{"resource", "gitlab_branch_protection", 2},
-		{"resource", "aws_instance", 3},
-		{"resource", "google_compute_instance", 3},
-		{"module", "vpc", 4},
-		{"module", "network", 4},
-		{"locals", "", 5},    // unknown, goes after (len=5)
-		{"terraform", "", 5}, // unknown
+		{"locals", "", 0},                 // default first
+		{"module", "group", 1},            // user pattern
+		{"data", "gitlab_group", 2},       // user pattern
+		{"data", "gitlab_project", 2},     // user pattern
+		{"resource", "gitlab_project", 3}, // user pattern
+		{"resource", "gitlab_branch_protection", 3},
+		{"resource", "aws_instance", 4}, // user pattern
+		{"resource", "google_compute_instance", 4},
+		{"module", "vpc", 5},       // user pattern
+		{"module", "network", 5},   // user pattern
+		{"terraform", "", 6},       // unknown
+		{"output", "my_output", 7}, // default last (after unknowns)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.blockType+"."+tt.resourceType, func(t *testing.T) {
+			t.Parallel()
+
+			got := cfg.GetOrder(tt.blockType, tt.resourceType)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
+func TestGetOrderLabellessBlocks(t *testing.T) {
+	t.Parallel()
+
+	cfg := &Config{
+		Order: []string{
+			`locals`,
+			`terraform`,
+			`module\..*`,
+		},
+		LocalsFirst: false,
+		OutputLast:  true,
+	}
+	require.NoError(t, cfg.Compile())
+
+	tests := []struct {
+		blockType    string
+		resourceType string
+		expected     int
+	}{
+		{"locals", "", 0}, // explicit in user config (not re-prepended)
+		{"terraform", "", 1},
+		{"module", "vpc", 2},
+		{"resource", "aws_instance", 3}, // unknown
+		{"output", "foo", 4},            // default last (after unknowns)
 	}
 
 	for _, tt := range tests {
@@ -60,11 +99,19 @@ func TestGetOrderUnknownBefore(t *testing.T) {
 			`resource\.gitlab_.*`,
 		},
 		UnknownFirst: true,
+		LocalsFirst:  true,
+		OutputLast:   true,
 	}
 	require.NoError(t, cfg.Compile())
 
-	// Known pattern
-	assert.Equal(t, 0, cfg.GetOrder("resource", "gitlab_project"))
+	// Default first
+	assert.Equal(t, 0, cfg.GetOrder("locals", ""))
+
+	// Known pattern (shifted by prepended default)
+	assert.Equal(t, 1, cfg.GetOrder("resource", "gitlab_project"))
+
+	// Default last (after unknowns)
+	assert.Equal(t, 3, cfg.GetOrder("output", "foo"))
 
 	// Unknown - should be -1 (before)
 	assert.Equal(t, -1, cfg.GetOrder("resource", "aws_instance"))
@@ -101,7 +148,9 @@ unknownFirst: true
 		assert.Len(t, cfg.Ignore, 2)
 		assert.True(t, cfg.AlphabeticalTies)
 		assert.True(t, cfg.UnknownFirst)
-		assert.Equal(t, 2, cfg.GetOrder("resource", "gitlab_project"))
+		assert.True(t, cfg.LocalsFirst)
+		assert.True(t, cfg.OutputLast)
+		assert.Equal(t, 3, cfg.GetOrder("resource", "gitlab_project"))
 	})
 	t.Run("missing config", func(t *testing.T) {
 		t.Parallel()
@@ -210,6 +259,8 @@ func TestDefault(t *testing.T) {
 	assert.True(t, cfg.AlphabeticalTies)
 	assert.False(t, cfg.UnknownFirst)
 	assert.Empty(t, cfg.Order)
+	assert.True(t, cfg.LocalsFirst)
+	assert.True(t, cfg.OutputLast)
 }
 
 func TestShouldIgnore(t *testing.T) {
