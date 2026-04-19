@@ -1,3 +1,10 @@
+![GitHub tag](https://img.shields.io/github/v/tag/thespags/tfsortplus)
+![Build](https://img.shields.io/github/actions/workflow/status/thespags/tfsortplus/ci.yml)
+![Go Version](https://img.shields.io/github/go-mod/go-version/thespags/tfsortplus)
+![License](https://img.shields.io/github/license/thespags/tfsortplus)
+[![Go Report Card](https://goreportcard.com/badge/github.com/thespags/tfsortplus)](https://goreportcard.com/report/github.com/thespags/tfsortplus)
+[![codecov](https://codecov.io/gh/thespags/tfsortplus/branch/main/graph/badge.svg)](https://codecov.io/gh/thespags/tfsortplus)
+
 # tfsortplus
 
 A CLI tool for sorting Terraform blocks (resources, data, modules, etc.) according to a configurable order.
