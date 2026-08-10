@@ -3,19 +3,16 @@ multi-ecosystem-groups:
   all-deps:
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps"
 updates:
   - package-ecosystem: "gomod"
     directory: "/"
     patterns: ["*"]
     multi-ecosystem-group: "all-deps"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "deps"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     patterns: ["*"]
     multi-ecosystem-group: "all-deps"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "ci"
