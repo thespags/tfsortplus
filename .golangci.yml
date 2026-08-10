@@ -103,3 +103,11 @@ linters:
         - sb strings.Builder          # common abbreviation for strings.Builder
         - sb *strings.Builder
 
+  exclusions:
+    rules:
+      # Test tables repeat literal fixture values (block types, filenames, etc.)
+      # on purpose for readability; constants would add noise, not clarity.
+      - path: _test\.go
+        linters:
+          - goconst
+
