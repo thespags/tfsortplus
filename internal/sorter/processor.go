@@ -11,6 +11,12 @@ import (
 	"github.com/thespags/tfsortplus/internal/config"
 )
 
+// Directory names excluded from processing by default.
+const (
+	gitDir       = ".git"
+	terraformDir = ".terraform"
+)
+
 // Processor handles file discovery and sorting.
 type Processor struct {
 	Recursive bool
@@ -27,7 +33,7 @@ type Processor struct {
 func NewProcessor() *Processor {
 	return &Processor{
 		extensions:   []string{".tf", ".hcl", ".tofu"},
-		excludedDirs: []string{".git", ".terraform"},
+		excludedDirs: []string{gitDir, terraformDir},
 	}
 }
 

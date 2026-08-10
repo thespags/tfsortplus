@@ -11,6 +11,9 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+// localsBlockType is the block type name for Terraform locals blocks.
+const localsBlockType = "locals"
+
 // Config represents the sorting configuration.
 type Config struct {
 	// Order defines the sorting priority. Supports regex patterns like "resource\.gitlab_.*".
@@ -67,7 +70,7 @@ func GetConfig(dir string) (*Config, error) {
 func (c *Config) Compile() error {
 	order := c.Order
 	if c.LocalsFirst {
-		order = append([]string{"locals"}, order...)
+		order = append([]string{localsBlockType}, order...)
 	}
 
 	last := c.Last
